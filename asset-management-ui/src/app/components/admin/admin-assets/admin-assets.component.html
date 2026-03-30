@@ -1,0 +1,347 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Assets</h1>
+      <p class="page-sub">{{ totalElements() }} total assets</p>
+    </div>
+    <button class="btn-primary" (click)="openCreate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Asset
+    </button>
+  </div>
+
+  <!-- ── SEARCH + FILTER TOOLBAR ── -->
+  <div class="toolbar">
+    <div class="toolbar-inner">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="search-input" type="text" placeholder="Search assets by name, code, description…"
+               [(ngModel)]="searchQuery" (ngModelChange)="onSearchInput()" />
+        @if (searchQuery) {
+          <button class="clear-btn" (click)="clearSearch()">✕</button>
+        }
+      </div>
+      <button class="filter-toggle-btn" [class.active]="showFilters()" (click)="showFilters.set(!showFilters())">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Filters
+        @if (hasActiveFilters) { <span class="filter-badge"></span> }
+      </button>
+    </div>
+
+    @if (showFilters()) {
+      <div class="filter-panel">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label>Asset Name</label>
+            <input type="text" placeholder="e.g. Laptop" [(ngModel)]="filterName" />
+          </div>
+          <div class="filter-field">
+            <label>Asset Code</label>
+            <input type="text" placeholder="e.g. AST-001" [(ngModel)]="filterAssetCode" />
+          </div>
+          <div class="filter-field">
+            <label>Category</label>
+            <select [(ngModel)]="filterCategoryId" (ngModelChange)="onFilterCategoryChange()">
+              <option [ngValue]="''">All categories</option>
+              @for (cat of filterStandaloneCategories; track cat.id) {
+                <option [ngValue]="cat.id">{{ cat.name }}</option>
+              }
+              @for (parent of filterParentCategories; track parent.id) {
+                <optgroup [label]="parent.name">
+                  <option [ngValue]="parent.id">{{ parent.name }} (all)</option>
+                  @for (sub of filterSubCategoriesOf(parent.id); track sub.id) {
+                    <option [ngValue]="sub.id">↳ {{ sub.name }}</option>
+                  }
+                </optgroup>
+              }
+            </select>
+          </div>
+          <div class="filter-field">
+            <label>Status</label>
+            <select [(ngModel)]="filterStatus">
+              <option value="">All statuses</option>
+              @for (s of statuses; track s) { <option [value]="s">{{ statusLabel(s) }}</option> }
+            </select>
+          </div>
+        </div>
+
+        @if (attributeFilterRows.length > 0) {
+          <div class="attr-filter-section">
+            <div class="attr-filter-title">Filter by Attributes</div>
+            <div class="filter-grid">
+              @for (row of attributeFilterRows; track row.attribute.id) {
+                <div class="filter-field">
+                  <label>{{ row.attribute.name }}</label>
+                  @if (row.attribute.dataType === 'STRING') {
+                    <input type="text" [placeholder]="'Enter ' + row.attribute.name" [(ngModel)]="row.valueString" />
+                  } @else if (row.attribute.dataType === 'NUMBER') {
+                    <input type="number" [placeholder]="'Enter ' + row.attribute.name" [(ngModel)]="row.valueNumber" />
+                  } @else if (row.attribute.dataType === 'DATE') {
+                    <input type="date" [(ngModel)]="row.valueDate" />
+                  } @else if (row.attribute.dataType === 'BOOLEAN') {
+                    <select [(ngModel)]="row.valueBool">
+                      <option [ngValue]="false">No</option>
+                      <option [ngValue]="true">Yes</option>
+                    </select>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="filter-actions">
+          <button class="btn-apply" (click)="applyFilters()">Apply Filters</button>
+          @if (hasActiveFilters) {
+            <button class="btn-clear-filters" (click)="clearFilters()">Clear All</button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="alert-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="loading-row"><div class="spinner"></div><span>Loading…</span></div>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Images</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (asset of assets(); track asset.id) {
+            <tr>
+              <td><code class="code-tag">{{ asset.assetCode }}</code></td>
+              <td class="cell-name">
+                <span class="asset-name-link" (click)="viewDetails(asset.id)">{{ asset.name }}</span>
+              </td>
+              <td><span class="cat-tag">{{ asset.category.name }}</span></td>
+              <td><span class="status-badge" [ngClass]="statusClass(asset.assetStatus)">{{ statusLabel(asset.assetStatus) }}</span></td>
+              <td class="cell-center">{{ asset.images?.length ?? 0 }}</td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn-icon view" (click)="viewDetails(asset.id)" title="View details">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon edit" (click)="openEdit(asset)" title="Edit">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon delete" (click)="confirmDelete(asset.id)" title="Delete">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty-row">No assets found.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <nav class="pagination">
+        <button class="page-btn" [disabled]="currentPage() === 0" (click)="goToPage(currentPage() - 1)">← Prev</button>
+        @for (item of visiblePages; track $index) {
+          @if (item === '...') {
+            <span class="page-ellipsis">…</span>
+          } @else {
+            <button class="page-btn" [class.active]="item === currentPage()" (click)="goToPage(+item)">{{ +item + 1 }}</button>
+          }
+        }
+        <button class="page-btn" [disabled]="currentPage() === totalPages() - 1" (click)="goToPage(currentPage() + 1)">Next →</button>
+      </nav>
+    }
+  }
+</div>
+
+<!-- ===== CREATE / EDIT MODAL ===== -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingAsset() ? 'Edit Asset' : 'New Asset' }}</h2>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+
+      @if (modalError()) {
+        <div class="alert-error">{{ modalError() }}</div>
+      }
+
+      <div class="modal-body">
+        <!-- Basic fields -->
+        <div class="form-grid">
+          <div class="field">
+            <label>Asset Code <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="formAssetCode" placeholder="e.g. AST-001" />
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select [(ngModel)]="formStatus">
+              @for (s of statuses; track s) {
+                <option [value]="s">{{ statusLabel(s) }}</option>
+              }
+            </select>
+          </div>
+          <div class="field full">
+            <label>Name <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="formName" placeholder="Asset name" />
+          </div>
+          <div class="field full">
+            <label>Description <span class="req">*</span></label>
+            <textarea rows="3" [(ngModel)]="formDescription" placeholder="Describe the asset…"></textarea>
+          </div>
+          <div class="field full">
+            <label>Category <span class="req">*</span></label>
+            <select [(ngModel)]="formCategoryId" (ngModelChange)="onCategoryChange()">
+              <option [ngValue]="''">— Select category —</option>
+              @for (cat of formStandaloneCategories; track cat.id) {
+                <option [ngValue]="cat.id">{{ cat.name }}</option>
+              }
+              @for (parent of formParentCategories; track parent.id) {
+                <optgroup [label]="parent.name">
+                  <option [ngValue]="parent.id">{{ parent.name }} (all)</option>
+                  @for (sub of formSubCategoriesOf(parent.id); track sub.id) {
+                    <option [ngValue]="sub.id">↳ {{ sub.name }}</option>
+                  }
+                </optgroup>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Attribute values -->
+        @if (attrLoading()) {
+          <div class="attrs-loading">
+            <div class="spinner-sm"></div>
+            <span>Loading attributes…</span>
+          </div>
+        } @else if (formAttributeRows.length > 0) {
+          <div class="attrs-section">
+            <div class="attrs-title">Attribute Values</div>
+
+            <!-- STRING / NUMBER / DATE — two per row -->
+            @if (nonBoolAttributeRows.length > 0) {
+              <div class="form-grid">
+                @for (row of nonBoolAttributeRows; track row.attributeId) {
+                  <div class="field">
+                    <label>{{ row.name }} <span class="type-tag">{{ row.dataType }}</span></label>
+                    @if (row.dataType === 'STRING') {
+                      <input type="text" [(ngModel)]="row.valueString" placeholder="Text value" />
+                    }
+                    @if (row.dataType === 'NUMBER') {
+                      <input type="number" [(ngModel)]="row.valueNumber" placeholder="Numeric value" />
+                    }
+                    @if (row.dataType === 'DATE') {
+                      <input type="date" [(ngModel)]="row.valueDate" />
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- BOOLEAN — at the bottom as a horizontal list of toggles -->
+            @if (boolAttributeRows.length > 0) {
+              <div class="bool-attrs-row">
+                @for (row of boolAttributeRows; track row.attributeId) {
+                  <div class="bool-attr-item">
+                    <label class="bool-attr-label">{{ row.name }}</label>
+                    <label class="toggle">
+                      <input type="checkbox" [(ngModel)]="row.valueBool" />
+                      <span class="toggle-track">
+                        <span class="toggle-thumb"></span>
+                      </span>
+                      <span class="toggle-text">{{ row.valueBool ? 'Yes' : 'No' }}</span>
+                    </label>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        } @else if (formCategoryId !== '') {
+          <p class="no-attrs-note">This category has no attributes.</p>
+        }
+
+        <!-- Images -->
+        @if (!editingAsset()) {
+          <div class="images-section">
+            <label class="images-label">Images</label>
+            <small class="images-help">Up to {{ maxImages }} images. Select multiple files at once, or choose again to add more.</small>
+            <input type="file" multiple accept="image/*" (change)="onFilesChange($event)" [disabled]="isImageLimitReached" />
+            @if (selectedFiles.length > 0) {
+              <div class="files-head">
+                <small class="file-hint">{{ selectedFiles.length }} / {{ maxImages }} selected</small>
+                <button type="button" class="btn-link-danger" (click)="clearSelectedFiles()">Clear all</button>
+              </div>
+              <div class="files-list">
+                @for (file of selectedFiles; track file.name + '-' + file.size + '-' + file.lastModified; let i = $index) {
+                  <div class="file-chip" [title]="file.name">
+                    <span class="file-name">{{ file.name }}</span>
+                    <button type="button" class="file-remove" (click)="removeSelectedFile(i)" aria-label="Remove file">✕</button>
+                  </div>
+                }
+              </div>
+            }
+            @if (imageLimitError()) {
+              <small class="file-hint warning">{{ imageLimitError() }}</small>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn-primary" [disabled]="saving()" (click)="save()">
+          @if (saving()) { <span class="btn-spinner"></span> }
+          {{ editingAsset() ? 'Save Changes' : 'Create Asset' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== DELETE CONFIRM ===== -->
+@if (deletingId()) {
+  <div class="modal-backdrop" (click)="cancelDelete()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Asset</h2>
+        <button class="modal-close" (click)="cancelDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this asset? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelDelete()">Cancel</button>
+        <button class="btn-danger" (click)="deleteAsset()">Delete</button>
+      </div>
+    </div>
+  </div>
+}
+

@@ -1,0 +1,1 @@
+ALTER TABLE attribute ADD COLUMN data_type VARCHAR(50);

@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/initial-schema.sql
+  - include:
+      file: db/changelog/changes/first-script.sql
+  - include:
+      file: db/changelog/changes/second-script.sql
+  - include:
+      file: db/changelog/changes/third-script.sql
+  - include:
+      file: db/changelog/changes/fourth-script.sql
+  - include:
+      file: db/changelog/changes/fifth-script.sql
+  - include:
+        file: db/changelog/changes/sixth-script.sql
+  - include:
+        file: db/changelog/changes/seventh-script.sql

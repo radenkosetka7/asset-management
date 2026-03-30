@@ -1,0 +1,54 @@
+<div class="asset-card" (click)="navigateToDetail()" style="cursor:pointer">
+  <!-- Image section -->
+  <div class="card-image">
+    @if (firstImage) {
+      <img
+        [src]="firstImage"
+        [alt]="asset.name"
+        class="asset-img"
+        loading="lazy"
+        decoding="async"
+        (error)="onImageError()"
+      />
+    } @else {
+      <div class="no-image">
+        <span>📷</span>
+        <small>No image</small>
+      </div>
+    }
+    <span class="status-badge" [ngClass]="statusClass">{{ statusLabel }}</span>
+  </div>
+
+  <!-- Card body -->
+  <div class="card-body">
+    <div class="card-header-row">
+      <span class="asset-code">{{ asset.assetCode }}</span>
+      <span class="category-tag">{{ asset.category.name }}</span>
+    </div>
+
+    <h3 class="asset-name">{{ asset.name }}</h3>
+
+    @if (asset.description) {
+      <p class="asset-description">{{ asset.description }}</p>
+    }
+
+    <!-- Attribute values -->
+    @if (asset.attributeValues && asset.attributeValues.length > 0) {
+      <div class="attributes">
+        @for (attr of asset.attributeValues.slice(0, 3); track attr.attribute.id) {
+          <div class="attribute-row">
+            <span class="attr-name">{{ attr.attribute.name }}</span>
+            <span class="attr-value">
+              @if (attr.valueString) { {{ attr.valueString }} }
+              @else if (attr.valueNumber !== null && attr.valueNumber !== undefined) { {{ attr.valueNumber }} }
+              @else if (attr.valueDate) { {{ attr.valueDate }} }
+              @else if (attr.valueBool !== null && attr.valueBool !== undefined) { {{ attr.valueBool ? 'Yes' : 'No' }} }
+              @else { — }
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+

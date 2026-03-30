@@ -1,0 +1,1 @@
+ALTER TABLE asset ADD COLUMN modified_at timestamp(6) with time zone;

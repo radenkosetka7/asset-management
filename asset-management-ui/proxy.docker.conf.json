@@ -1,0 +1,18 @@
+{
+  "/api": {
+    "target": "https://backend:8443",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/oauth2/authorization": {
+    "target": "https://backend:8443",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/login/oauth2": {
+    "target": "https://backend:8443",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
+

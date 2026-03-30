@@ -1,0 +1,15 @@
+target/
+
+*.log
+.vscode/
+.env
+.DS_Store
+!README.md
+*.md
+.gitignore
+.git/
+*.ipr
+*.iws
+*.iml
+.idea/
+.mvn/

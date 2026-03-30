@@ -1,0 +1,220 @@
+<div class="home-container">
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">AssetHub</span>
+          <span class="brand-sub">Asset Management System</span>
+        </div>
+      </div>
+      <!-- Admin navigation -->
+      <div class="header-actions">
+        @if (authService.isLoggedIn()) {
+          <a routerLink="/admin" class="header-admin-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Admin Panel
+          </a>
+        } @else {
+          <a routerLink="/login" class="header-login-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Admin Login
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== TOOLBAR: Search + Filter toggle ===== -->
+  <div class="toolbar">
+    <div class="toolbar-inner">
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Search assets by name, code, description…"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchInput()"
+        />
+        @if (searchQuery) {
+          <button class="clear-btn" (click)="clearSearch()" title="Clear search">✕</button>
+        }
+      </div>
+
+      <!-- Filter toggle -->
+      <button class="filter-toggle-btn" [class.active]="showFilters()" (click)="showFilters.set(!showFilters())">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Filters
+        @if (hasActiveFilters) {
+          <span class="filter-badge"></span>
+        }
+      </button>
+    </div>
+
+    <!-- Filter panel -->
+    @if (showFilters()) {
+      <div class="filter-panel">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label>Asset Name</label>
+            <input type="text" placeholder="e.g. Laptop" [(ngModel)]="filterName" />
+          </div>
+          <div class="filter-field">
+            <label>Asset Code</label>
+            <input type="text" placeholder="e.g. AST-001" [(ngModel)]="filterAssetCode" />
+          </div>
+          <div class="filter-field">
+            <label>Category</label>
+            <select [(ngModel)]="filterCategoryId" (ngModelChange)="onCategoryChange()">
+              <option [ngValue]="''">All categories</option>
+
+              <!-- Standalone categories (no parent, no children) -->
+              @for (cat of standaloneCategories; track cat.id) {
+                <option [ngValue]="cat.id">{{ cat.name }}</option>
+              }
+
+              <!-- Parent categories with their subcategories grouped -->
+              @for (parent of groupedParentCategories; track parent.id) {
+                <optgroup [label]="parent.name">
+                  <option [ngValue]="parent.id">{{ parent.name }} (all)</option>
+                  @for (sub of subCategoriesOf(parent.id); track sub.id) {
+                    <option [ngValue]="sub.id">↳ {{ sub.name }}</option>
+                  }
+                </optgroup>
+              }
+            </select>
+          </div>
+          <div class="filter-field">
+            <label>Status</label>
+            <select [(ngModel)]="filterStatus">
+              <option value="">All statuses</option>
+              @for (s of statuses; track s) {
+                <option [value]="s">{{ s | titlecase }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (attributeFilterRows.length > 0) {
+          <div class="attr-filter-section">
+            <div class="attr-filter-title">Filter by Attributes</div>
+            <div class="filter-grid">
+              @for (row of attributeFilterRows; track row.attribute.id) {
+                <div class="filter-field">
+                  <label>{{ row.attribute.name }}</label>
+                  @if (row.attribute.dataType === 'STRING') {
+                    <input type="text" [placeholder]="'Enter ' + row.attribute.name" [(ngModel)]="row.valueString" />
+                  } @else if (row.attribute.dataType === 'NUMBER') {
+                    <input type="number" [placeholder]="'Enter ' + row.attribute.name" [(ngModel)]="row.valueNumber" />
+                  } @else if (row.attribute.dataType === 'DATE') {
+                    <input type="date" [(ngModel)]="row.valueDate" />
+                  } @else if (row.attribute.dataType === 'BOOLEAN') {
+                    <select [(ngModel)]="row.valueBool">
+                      <option [ngValue]="false">No</option>
+                      <option [ngValue]="true">Yes</option>
+                    </select>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="filter-actions">
+          <button class="btn-apply" (click)="applyFilters()">Apply Filters</button>
+          @if (hasActiveFilters) {
+            <button class="btn-clear-filters" (click)="clearFilters()">Clear All</button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ===== CONTENT ===== -->
+  <main class="content">
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading assets…</p>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (error()) {
+      <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <p class="error-message">{{ error() }}</p>
+        <button class="btn-retry" (click)="loadAssets()">Retry</button>
+      </div>
+    }
+
+    <!-- Grid -->
+    @if (!loading() && !error()) {
+      @if (assets().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🗂️</div>
+          <h2>No assets found</h2>
+          <p>Try adjusting your search or filters.</p>
+        </div>
+      } @else {
+        <div class="assets-grid">
+          @for (asset of assets(); track asset.id) {
+            <app-asset-card [asset]="asset" />
+          }
+        </div>
+      }
+
+      <!-- Smart Pagination -->
+      @if (totalPages() > 1) {
+        <nav class="pagination">
+          <button class="page-btn nav-btn" [disabled]="currentPage() === 0" (click)="goToPage(currentPage() - 1)">
+            ← Prev
+          </button>
+
+          @for (item of visiblePages; track $index) {
+            @if (item === '...') {
+              <span class="page-ellipsis">…</span>
+            } @else {
+              <button
+                class="page-btn"
+                [class.active]="item === currentPage()"
+                (click)="goToPage(+item)">
+                {{ +item + 1 }}
+              </button>
+            }
+          }
+
+          <button class="page-btn nav-btn" [disabled]="currentPage() === totalPages() - 1" (click)="goToPage(currentPage() + 1)">
+            Next →
+          </button>
+        </nav>
+      }
+    }
+  </main>
+</div>
+

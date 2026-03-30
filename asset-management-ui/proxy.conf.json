@@ -1,0 +1,18 @@
+{
+  "/api": {
+    "target": "https://localhost:8443",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/oauth2/authorization": {
+    "target": "https://localhost:8443",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/login/oauth2": {
+    "target": "https://localhost:8443",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
+

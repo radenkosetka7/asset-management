@@ -1,0 +1,81 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Attributes</h1>
+      <p class="page-sub">Create global standalone attributes that can be linked to categories</p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Create form -->
+    <div class="form-card">
+      <h3 class="form-card-title">Create New Attribute</h3>
+
+      @if (error()) {
+        <div class="alert-error">{{ error() }}</div>
+      }
+      @if (success()) {
+        <div class="alert-success">{{ success() }}</div>
+      }
+
+      <div class="field">
+        <label>Attribute Name <span class="req">*</span></label>
+        <input type="text" [(ngModel)]="formName" placeholder="e.g. Serial Number" (keyup.enter)="save()" />
+      </div>
+
+      <div class="field">
+        <label>Data Type <span class="req">*</span></label>
+        <div class="type-options">
+          @for (dt of dataTypes; track dt) {
+            <button
+              class="type-option"
+              [class.selected]="formDataType === dt"
+              (click)="formDataType = dt"
+            >
+              @if (dt === 'STRING')  { 📝 }
+              @if (dt === 'NUMBER')  { 🔢 }
+              @if (dt === 'DATE')    { 📅 }
+              @if (dt === 'BOOLEAN') { ✅ }
+              {{ dt }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <button class="btn-primary" [disabled]="saving()" (click)="save()">
+        @if (saving()) { <span class="btn-spinner"></span> }
+        Create Attribute
+      </button>
+    </div>
+
+    <!-- Created this session -->
+    @if (created().length > 0) {
+      <div class="created-card">
+        <h3 class="form-card-title">Created This Session</h3>
+        <div class="created-list">
+          @for (attr of created(); track attr.id) {
+            <div class="created-row">
+              <span class="created-name">{{ attr.name }}</span>
+              <span class="created-type">{{ attr.dataType }}</span>
+              <span class="created-id">#{{ attr.id }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Info card -->
+  <div class="info-card">
+    <div class="info-icon">💡</div>
+    <div>
+      <div class="info-title">How attributes work</div>
+      <p class="info-text">
+        Standalone attributes can be linked to categories when creating a new category.
+        Each attribute has a name and a data type (String, Number, Date, or Boolean).
+        Assets in a category automatically inherit its attributes and you can assign values to them.
+      </p>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: asset_management
+  datasource:
+    url: jdbc:postgresql://localhost:5432/assets_db
+    username: postgres
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/changelog-master.yaml
+
+  elasticsearch:
+    uris: https://localhost:9200
+    username: elastic
+    password: ${ELASTICSEARCH_PASSWORD}
+
+  cache:
+    type: redis
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope: read:user,user:email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:20MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:50MB}
+
+logging:
+  level:
+    liquibase: INFO
+    org:
+      springframework:
+        boot:
+          autoconfigure:
+            liquibase: DEBUG
+
+authorization:
+  token:
+    secret: ${SECRET_TOKEN}
+    refresh-secret: ${REFRESH_TOKEN_SECRET}
+  access-token:
+    expiration-time: 900000
+  refresh-token:
+    expiration-time: 18000000
+
+server:
+  port: 8443
+  ssl:
+    key-store: classpath:keystore.p12
+    key-store-password: ${SSL_PASSWORD}
+    key-store-type: PKCS12
+    key-alias: mycert
+    enabled: true
+
+app:
+  oauth2:
+    redirect-uri: http://127.0.0.1:4200/oauth2/callback
